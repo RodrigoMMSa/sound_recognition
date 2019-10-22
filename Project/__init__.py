@@ -6,7 +6,8 @@ import sys
 import Project.decoder
 import os
 import traceback
-from .fingerprint import fingerprint
+from Project.fingerprint import *
+from Project.recognizer import MicrophoneRecognizer
 
 
 log.basicConfig(level=log.INFO)
@@ -19,7 +20,18 @@ class Main:
     db = Database('sqlite:///sounds.db')
     fingerprint_limit = None
     sounds = None
-    soundhashes_set = set()
+    soundhashes_set = {}
+
+    def __init__(self):
+        self.get_fingerprinted_sounds()
+
+    def get_fingerprinted_sounds(self):
+        # get sounds previously indexed
+        self.sounds = self.db.get_sounds()
+        self.soundhashes_set = set()  # to know which ones we've computed before
+        for sound in self.sounds:
+            sound_hash = binascii.hexlify(sound.file_sha1).upper().decode('utf-8')
+            self.soundhashes_set.add(sound_hash)
 
     def fingerprint_directory(self, path, extensions, nprocesses=None):
         # Try to use the maximum amount of processes if not given.
@@ -78,14 +90,58 @@ class Main:
         pool.close()
         pool.join()
 
-    def get_fingerprinted_sounds(self):
-        # get sounds previously indexed
-        self.sounds = self.db.get_sounds()
-        self.soundhashes_set = set()  # to know which ones we've computed before
-        for sound in self.sounds:
-            sound_hash = binascii.hexlify(sound.file_sha1).upper().decode('utf-8')
-            self.soundhashes_set.add(sound_hash)
+    def recognize(self, *options, **kwoptions):
+        r = MicrophoneRecognizer(self)
+        return r.recognize(*options, **kwoptions)
 
+    def find_matches(self, samples, Fs=DEFAULT_FS):
+        hashes = fingerprint(samples, fs=Fs)
+        return self.db.return_matches(hashes)
+
+    def align_matches(self, matches):
+        """
+            Finds hash matches that align in time with other matches and finds
+            consensus about which hashes are "true" signal from the audio.
+
+            Returns a dictionary with match information.
+        """
+        # align by diffs
+        diff_counter = {}
+        largest = 0
+        largest_count = 0
+        sound_id = -1
+        for tup in matches:
+            sid, diff = tup
+            if diff not in diff_counter:
+                diff_counter[diff] = {}
+            if sid not in diff_counter[diff]:
+                diff_counter[diff][sid] = 0
+            diff_counter[diff][sid] += 1
+
+            if diff_counter[diff][sid] > largest_count:
+                largest = diff
+                largest_count = diff_counter[diff][sid]
+                sound_id = sid
+
+        # extract identification
+        sound = self.db.get_sound_by_id(sound_id)
+        if sound:
+            soundname = sound.name
+        else:
+            return None
+
+        # return match info
+        nseconds = round(float(largest) / DEFAULT_FS * DEFAULT_WINDOW_SIZE * DEFAULT_OVERLAP_RATIO, 5)
+        sound = {
+            'sound_id': sound_id,
+            'sound_name': soundname,
+            Main.confidence: largest_count,
+            Main.offset: int(largest),
+            'offset_seconds': nseconds,
+            'file_sha1': binascii.hexlify(sound.file_sha1).decode('utf-8'),
+        }
+        return sound
+    
 
 def _fingerprint_worker(filename, limit=None, sound_name=None):
     # Pool.imap sends arguments as tuples so we have to unpack them ourselves.

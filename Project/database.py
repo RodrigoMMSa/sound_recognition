@@ -1,7 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import sqlalchemy as sqla
-import logging as log
 import binascii
 
 
@@ -89,3 +88,37 @@ class Database(object):
         sound = self.session.query(Sound).filter(Sound.id == sid).one()
         sound.fingerprinted = True
         self.session.commit()
+
+    def return_matches(self, hashes):
+        """
+        Searches the database for pairs of (hash, offset) values.
+
+        :param hashes: A sequence of tuples in the format (hash, offset)
+            sha: Part of a sha1 hash, in hexadecimal format
+            offset: Offset this hash was created from/at.
+
+        :returns: a sequence of (sid, offset_difference) tuples.\
+            sid: sound identifier
+            offset_difference: (offset - database_offset)
+        """
+        # Create a dictionary of hash => offset pairs for later lookups
+        mapper = {}
+        for sha, offset in hashes:
+            mapper[sha.upper()] = offset
+
+        # Get an iterable of all the hashes we need
+        values = [binascii.unhexlify(h) for h in mapper.keys()]
+
+        for fingerprint in self.session.query(Fingerprint).filter(
+            Fingerprint.hash.in_(values)
+        ):
+            sha = binascii.hexlify(fingerprint.hash).upper().decode('utf-8')
+            yield (fingerprint.sound_id, fingerprint.offset - mapper[sha])
+            
+    def get_sound_by_id(self, sid):
+        """
+        Return a sound by its identifier
+
+        :param sid: sound identifier
+        """
+        return self.session.query(Sound).filter(Sound.id == sid).one_or_none()
