@@ -8,7 +8,7 @@ import os
 import traceback
 from Project.fingerprint import *
 from Project.recognizer import MicrophoneRecognizer
-
+import time
 
 log.basicConfig(level=log.INFO)
 
@@ -92,7 +92,7 @@ class Main:
 
     def recognize(self, *options, **kwoptions):
         r = MicrophoneRecognizer(self)
-        return r.recognize(*options, **kwoptions)
+        return r.listen()
 
     def find_matches(self, samples, Fs=DEFAULT_FS):
         hashes = fingerprint(samples, fs=Fs)
@@ -127,20 +127,20 @@ class Main:
         sound = self.db.get_sound_by_id(sound_id)
         if sound:
             soundname = sound.name
-        else:
-            return None
+            # return match info
+            nseconds = round(float(largest) / DEFAULT_FS * DEFAULT_WINDOW_SIZE * DEFAULT_OVERLAP_RATIO, 5)
+            sound = {
+                'sound_id': sound_id,
+                'sound_name': soundname,
+                Main.confidence: largest_count,
+                Main.offset: int(largest),
+                'offset_seconds': nseconds,
+                'file_sha1': binascii.hexlify(sound.file_sha1).decode('utf-8'),
+            }
+            print(sound)
 
-        # return match info
-        nseconds = round(float(largest) / DEFAULT_FS * DEFAULT_WINDOW_SIZE * DEFAULT_OVERLAP_RATIO, 5)
-        sound = {
-            'sound_id': sound_id,
-            'sound_name': soundname,
-            Main.confidence: largest_count,
-            Main.offset: int(largest),
-            'offset_seconds': nseconds,
-            'file_sha1': binascii.hexlify(sound.file_sha1).decode('utf-8'),
-        }
-        return sound
+        time.sleep(0.2)
+        return self.recognize()
     
 
 def _fingerprint_worker(filename, limit=None, sound_name=None):

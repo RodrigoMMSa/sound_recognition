@@ -2,6 +2,7 @@ from Project.fingerprint import *
 import numpy as np
 import pyaudio
 import logging as log
+import audioop
 
 
 class MicrophoneRecognizer:
@@ -9,10 +10,10 @@ class MicrophoneRecognizer:
     default_format = pyaudio.paInt16
     default_channels = 2
     default_samplerate = 44100
+    default_treshold = 30
 
     def __init__(self, main):
         self.audio = pyaudio.PyAudio()
-        self.stream = None
         self.data = []
         self.channels = MicrophoneRecognizer.default_channels
         self.chunksize = MicrophoneRecognizer.default_chunksize
@@ -20,6 +21,24 @@ class MicrophoneRecognizer:
         self.recorded = False
         self.main = main
         self.Fs = DEFAULT_FS
+        self.stream = None
+
+    def listen(self):
+        print('Listening beginning')
+        self.stream = self.audio.open(
+            format=self.default_format,
+            channels=self.channels,
+            rate=self.samplerate,
+            input=True,
+            frames_per_buffer=self.chunksize,
+        )
+        self.stream.start_stream()
+        while True:
+            inout = self.stream.read(self.chunksize, exception_on_overflow=False)
+            rms_val = audioop.rms(inout, 2)  # width=2 for format=paInt16
+            if rms_val > self.default_treshold:
+                log.info('sound: %d' % rms_val)
+                self.recognize()
 
     def _recognize(self, *data):
         matches = []
@@ -27,34 +46,14 @@ class MicrophoneRecognizer:
             matches.extend(self.main.find_matches(d, Fs=self.Fs))
         return self.main.align_matches(matches)
 
-    def start_recording(
-        self,
-        channels=default_channels,
-        samplerate=default_samplerate,
-        chunksize=default_chunksize
-    ):
+    def start_recording(self):
         print('Starting recording')
-        self.chunksize = chunksize
-        self.channels = channels
         self.recorded = False
-        self.samplerate = samplerate
 
-        if self.stream:
-            self.stream.stop_stream()
-            self.stream.close()
-
-        self.stream = self.audio.open(
-            format=self.default_format,
-            channels=channels,
-            rate=samplerate,
-            input=True,
-            frames_per_buffer=chunksize,
-        )
-
-        self.data = [[] for i in range(channels)]
+        self.data = [[] for i in range(self.channels)]
 
     def process_recording(self):
-        data = self.stream.read(self.chunksize)
+        data = self.stream.read(self.chunksize, exception_on_overflow=False)
         nums = np.fromstring(data, np.int16)
         for c in range(self.channels):
             self.data[c].extend(nums[c::self.channels])
@@ -62,7 +61,6 @@ class MicrophoneRecognizer:
     def stop_recording(self):
         self.stream.stop_stream()
         self.stream.close()
-        self.stream = None
         self.recorded = True
 
     def recognize_recording(self):
@@ -73,7 +71,7 @@ class MicrophoneRecognizer:
     def get_recorded_time(self):
         return len(self.data[0]) / self.samplerate
 
-    def recognize(self, seconds=10):
+    def recognize(self, seconds=1.5):
         self.start_recording()
         for i in range(0, int(self.samplerate / self.chunksize * seconds)):
             self.process_recording()
