@@ -5,6 +5,7 @@ from kivy.uix.widget import Widget
 from kivy.lang import Builder
 from kivy.properties import ObjectProperty
 from kivy.uix.pagelayout import PageLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.screenmanager import ScreenManager, Screen
 

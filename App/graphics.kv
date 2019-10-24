@@ -7,47 +7,60 @@
             font_size: 70
             text: "Welcome"
 
-
-        Button:
-            id: start
-            font_size: 50
-            text: "START"
-            on_press:
-                root.manager.transition.direction = "left"
-                root.manager.transition.duration = 1
-                root.manager.get_screen('new_screen').ids.stop.disabled = False
-                root.manager.current = "new_screen"
-                self.disabled = True
-            background_normal: ''
-            background_color: 1, .3, .4, .85
-        Button:
-            font_size: 50
-            text: "View"
-            on_press:
-                root.manager.transition.direction = "left"
-                root.manager.transition.duration = 0.5
-                root.manager.current = "new_screen"
+        GridLayout:
+            cols: 2
+            Button:
+                font_size: 50
+                text: "View"
+                on_press:
+                    root.manager.transition.direction = "left"
+                    root.manager.transition.duration = 0.5
+                    root.manager.current = "new_screen"
+                background_normal: ''
+                background_color: .1, .1, .8, .85
+            Button:
+                id: start
+                font_size: 50
+                text: "START"
+                on_press:
+                    root.manager.transition.direction = "left"
+                    root.manager.transition.duration = 1
+                    root.manager.get_screen('new_screen').ids.stop.disabled = False
+                    root.manager.current = "new_screen"
+                    self.disabled = True
+                background_normal: ''
+                background_color: 1, .3, .4, .85
 
 
 <NewScreen>:
     BoxLayout:
-        height: root.height/4
-        Button:
-            id: stop
-            font_size: 30
-            text: "STOP"
-            disabled: True
-            on_press:
-                root.manager.transition.direction = "right"
-                root.manager.transition.duration = 1
-                self.disabled = True
-                root.manager.get_screen('graphics').ids.start.disabled = False
-                root.manager.current = "graphics"
+        orientation: 'vertical'
+        GridLayout:
+            size_hint: (1 , .4)
+            cols: 2
+            Button:
+                font_size: 30
+                text: "Go back"
+                on_press:
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 0.5
+                    root.manager.current = "graphics"
+                background_normal: ''
+                background_color: .1, .1, .8, .85
 
-        Button:
-            font_size: 30
-            text: "Go back"
-            on_press:
-                root.manager.transition.direction = "right"
-                root.manager.transition.duration = 0.5
-                root.manager.current = "graphics"
+            Button:
+                id: stop
+                font_size: 30
+                text: "STOP"
+                disabled: True
+                on_press:
+                    root.manager.transition.direction = "right"
+                    root.manager.transition.duration = 1
+                    self.disabled = True
+                    root.manager.get_screen('graphics').ids.start.disabled = False
+                    root.manager.current = "graphics"
+        BoxLayout:
+            Button:
+                text: "teste"
+                disabled: True
+
