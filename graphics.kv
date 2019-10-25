@@ -2,6 +2,8 @@
 #:import Factory kivy.factory.Factory
 
 <Graphics>:
+    on_enter:
+        app.counter = 1
     BoxLayout:
         orientation: 'vertical'
         Label:
@@ -12,7 +14,7 @@
             cols: 2
             Button:
                 font_size: 50
-                text: "View"
+                text: "Continue"
                 on_press:
                     root.manager.transition.direction = "left"
                     root.manager.transition.duration = 0.5
@@ -46,6 +48,8 @@
 
 
 <Working>:
+    on_pre_enter:
+        root.pre_run_program(app.view, app.counter)
     on_enter:
         root.run_program(app.police, app.view)
         root.change_text()
@@ -55,6 +59,7 @@
             size_hint: (1 , .4)
             cols: 2
             Button:
+                id: back
                 font_size: 30
                 text: "Go back"
                 on_press:
@@ -78,7 +83,7 @@
                     root.manager.current = "graphics"
         BoxLayout:
             Label:
-                font_size: 40
+                font_size: 20
                 text: root.sound_text
 
 <Working2>:

@@ -40,6 +40,8 @@ class MicrophoneRecognizer:
             self.rms_val = audioop.rms(inout, 2)  # width=2 for format=paInt16
             if self.rms_val > self.default_treshold:
                 log.info('sound: %d' % self.rms_val)
+                if self.rms_val > 1000:
+                    self.main.sound = "Really loud Sound ... Take care"
                 self.stream_loud.stop_stream()
                 self.stream_loud.close()
                 security = False

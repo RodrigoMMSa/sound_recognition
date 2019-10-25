@@ -13,7 +13,6 @@ from kivy.clock import Clock
 from functools import partial
 from kivy.uix.popup import Popup
 
-
 Builder.load_file('graphics.kv')
 
 
@@ -30,22 +29,31 @@ class Loading(Screen):
 
 
 class Working(Screen):
-    sound_text = StringProperty()
+    sound_text = StringProperty("When ready press START")
+
+    def pre_run_program(self, view, counter):
+        if (not view) and counter == 1:
+            print("entrei")
+            self.sound_text = "Listening..."
 
     def run_program(self, police, view):
         if not view:
             police.recognize()
             App.get_running_app().sound = police.sound
-            self.sound_text = App.get_running_app().sound
+            self.sound_text = self.sound_text.replace("Listening...", "")
+            print(self.sound_text)
+            self.sound_text = "{}\n {}) {}".format("Listening...",
+                                                   App.get_running_app().counter,
+                                                   App.get_running_app().sound) + self.sound_text
 
     def change_text(self):
-        App.get_running_app().counter += 1
         if (not App.get_running_app().view) and App.get_running_app().counter <= 3:
+            App.get_running_app().counter += 1
             self.parent.transition.direction = "up"
             self.parent.current = 'working_2'
-        else:
-            App.get_running_app().sound = "Are you still there?"
-            self.sound_text = App.get_running_app().sound
+        elif App.get_running_app().counter > 3:
+            App.get_running_app().sound = "Are you still there?\n\n"
+            self.sound_text = App.get_running_app().sound + self.sound_text
 
     def stop_program(self):
         App.get_running_app().view = True
@@ -56,14 +64,19 @@ class Working2(Screen):
 
 
 class Pop(Popup):
-    pass
+    # create content and add to the popup
+    content = Button(text='Close me!')
+    popup = Popup(content=content, auto_dismiss=False)
+
+    # bind the on_press event of the button to the dismiss function
+    content.bind(on_press=popup.dismiss)
 
 
 class MyApp(App):
     police = Main()
     view = True
     sound = ""
-    counter = 0
+    counter = 1
     screen_manager = ScreenManager()
 
     def build(self):

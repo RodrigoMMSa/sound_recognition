@@ -124,8 +124,8 @@ class Main:
                 sound_id = sid
 
         # extract identification
-        self.sound = self.db.get_sound_by_id(sound_id)
-        if self.sound:
+        if self.db.get_sound_by_id(sound_id):
+            self.sound = self.db.get_sound_by_id(sound_id)
             soundname = self.sound.name
             # return match info
             nseconds = round(float(largest) / DEFAULT_FS * DEFAULT_WINDOW_SIZE * DEFAULT_OVERLAP_RATIO, 5)
@@ -138,6 +138,8 @@ class Main:
             #     'offset_seconds': nseconds,
             #     'file_sha1': binascii.hexlify(self.sound.file_sha1).decode('utf-8'),
             # }
+        elif self.sound == "Really loud Sound ... Take care":
+            pass
         else:
             self.sound = "Must be the wind"
         return self.sound
