@@ -8,7 +8,6 @@ import os
 import traceback
 from Project.fingerprint import *
 from Project.recognizer import MicrophoneRecognizer
-import time
 
 log.basicConfig(level=log.INFO)
 
@@ -21,6 +20,7 @@ class Main:
     fingerprint_limit = None
     sounds = None
     soundhashes_set = {}
+    sound = ""
 
     def __init__(self):
         self.get_fingerprinted_sounds()
@@ -124,23 +124,23 @@ class Main:
                 sound_id = sid
 
         # extract identification
-        sound = self.db.get_sound_by_id(sound_id)
-        if sound:
-            soundname = sound.name
+        self.sound = self.db.get_sound_by_id(sound_id)
+        if self.sound:
+            soundname = self.sound.name
             # return match info
             nseconds = round(float(largest) / DEFAULT_FS * DEFAULT_WINDOW_SIZE * DEFAULT_OVERLAP_RATIO, 5)
-            sound = {
-                'sound_id': sound_id,
-                'sound_name': soundname,
-                Main.confidence: largest_count,
-                Main.offset: int(largest),
-                'offset_seconds': nseconds,
-                'file_sha1': binascii.hexlify(sound.file_sha1).decode('utf-8'),
-            }
-            print(sound)
-
-        time.sleep(0.2)
-        return self.recognize()
+            self.sound = "We heard a {}!!\n with a confidence of {}".format(soundname, largest_count)
+            # sound = {
+            #     'sound_id': sound_id,
+            #     'sound_name': soundname,
+            #     Main.confidence: largest_count,
+            #     Main.offset: int(largest),
+            #     'offset_seconds': nseconds,
+            #     'file_sha1': binascii.hexlify(self.sound.file_sha1).decode('utf-8'),
+            # }
+        else:
+            self.sound = "Must be the wind"
+        return self.sound
     
 
 def _fingerprint_worker(filename, limit=None, sound_name=None):
