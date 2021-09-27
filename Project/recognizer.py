@@ -10,7 +10,7 @@ class MicrophoneRecognizer:
     default_format = pyaudio.paInt16
     default_channels = 2
     default_samplerate = 44100
-    default_treshold = 50
+    default_treshold = 3000
 
     def __init__(self, main):
         self.audio = pyaudio.PyAudio()
@@ -40,7 +40,7 @@ class MicrophoneRecognizer:
             self.rms_val = audioop.rms(inout, 2)  # width=2 for format=paInt16
             if self.rms_val > self.default_treshold:
                 log.info('sound: %d' % self.rms_val)
-                if self.rms_val > 1000:
+                if self.rms_val > 100 * self.default_treshold:
                     self.main.sound = "Really loud Sound ... Take care"
                 self.stream_loud.stop_stream()
                 self.stream_loud.close()
@@ -84,7 +84,7 @@ class MicrophoneRecognizer:
     def get_recorded_time(self):
         return len(self.data[0]) / self.samplerate
 
-    def recognize(self, seconds=1.5):
+    def recognize(self, seconds=4):
         self.start_recording()
         for i in range(0, int(self.samplerate / self.chunksize * seconds)):
             self.process_recording()

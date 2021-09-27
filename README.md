@@ -33,3 +33,5 @@ copy of data is made, the original is unaltered and the copy is identical, bit-f
 
 Throughout the Project we only used the **SHA-1** hash, that stands for Secure Hashing Algorithm 1, 
 which has a 160-bit length
+
+## How to Use

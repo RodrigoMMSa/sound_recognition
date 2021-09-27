@@ -124,12 +124,16 @@ class Main:
                 sound_id = sid
 
         # extract identification
-        if self.db.get_sound_by_id(sound_id):
+        if (self.db.get_sound_by_id(sound_id)) and (largest_count > 10):
             self.sound = self.db.get_sound_by_id(sound_id)
             soundname = self.sound.name
             # return match info
             nseconds = round(float(largest) / DEFAULT_FS * DEFAULT_WINDOW_SIZE * DEFAULT_OVERLAP_RATIO, 5)
-            self.sound = "We heard a {}!!\n with a confidence of {}".format(soundname, largest_count)
+            sha1 = binascii.hexlify(self.sound.file_sha1).decode('utf-8')
+            self.sound = "We heard a {}!!\n with a confidence of {}, file_sha1 {} in {}".format(soundname,
+                                                                                                largest_count,
+                                                                                                sha1,
+                                                                                                nseconds)
             # sound = {
             #     'sound_id': sound_id,
             #     'sound_name': soundname,
@@ -138,10 +142,11 @@ class Main:
             #     'offset_seconds': nseconds,
             #     'file_sha1': binascii.hexlify(self.sound.file_sha1).decode('utf-8'),
             # }
-        elif self.sound == "Really loud Sound ... Take care":
+        elif self.sound == "Cuidado, som muito alto":
             pass
         else:
-            self.sound = "Must be the wind"
+            self.sound = "Som normal"
+        print(self.sound)
         return self.sound
     
 
